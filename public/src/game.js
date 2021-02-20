@@ -26,92 +26,86 @@ var winText;
 var loseText;
 
 function preload () {
-    this.load.image('background', './assets/images/background.png');
-    this.load.spritesheet('cat', 
-      './assets/cat.png',
-      { frameWidth: 82, frameHeight: 72 }
-      );
-    this.load.image('burrito', './assets/burrito.png');
-    this.load.image('exitDoor', './assets/exitDoor.png')
-    this.load.image('tiles', './assets/tilesets/platformPack_tilesheet.png');
-    this.load.tilemapTiledJSON('map', './assets/tilemaps/level1.json')
+  this.load.image('background1', './assets/images/background-original.png');
+  this.load.image('background2', './assets/images/background-front.png');
+  this.load.image('burrito', './assets/images/burrito.png');
+  this.load.spritesheet('cat', 
+    './assets/cat.png',
+    { frameWidth: 82, frameHeight: 72 }
+    );
+  this.load.image('exitDoor', './assets/exitDoor.png')
+  this.load.image('tiles', './assets/tilesets/tilesheet.png');
+  this.load.tilemapTiledJSON('map', './assets/tilemaps/level1.json')
 }
 
 function create () {
-
-  this.scene = this.add.tileSprite(1600, 320, 3200, 640, 'background');
-  const map = this.make.tilemap({ key: 'map' });
-  const tileset = map.addTilesetImage('hungryCat', 'tiles');
-  const platforms = map.createStaticLayer('Platforms', tileset, 0, 0);
-  platforms.setCollisionByExclusion(-1, true);
   
+  //----------   Scrolling Backgrounds   ------------//
+  this.bg_1 = this.add.tileSprite(0, 0, 10000, game.config.height, 'background1'); // Background Image 1
+  this.bg_1.setOrigin(0, 0);
+  this.bg_1.setScrollFactor(.25);
+  this.bg_1 = this.add.tileSprite(0, 0, 10000, game.config.height, 'background2'); // Background Image 2
+  this.bg_1.setOrigin(0, 0);
+  this.bg_1.setScrollFactor(.5);
+  const map = this.make.tilemap({ key: 'map' });    // Bring in JSON tilemap
+  const tileset = map.addTilesetImage('hungryCat', 'tiles');  // Create Tileset from JSON
+  const platforms = map.createStaticLayer('Platforms', tileset, 0, 0);  // Bring in Platforms per JSON
+  platforms.setCollisionByExclusion(-1, true);
   cursors = this.input.keyboard.createCursorKeys(); 
 
   //----------   Exit Door   ------------//
-  exitDoors = this.physics.add.group({
-    key: 'exitDoor',
-    setXY: { x: 3104, y: 165}
-  })
-  this.physics.add.collider(exitDoors, platforms);
-  
+  exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
+  this.physics.add.collider(exitDoor, platforms);
+
   //----------   Player   ------------//
   player = this.physics.add.sprite(100, 450, 'cat');
-  this.physics.world.setBounds(0,0, 3200, 640)
+  player.setMaxVelocity(1000,1000);
+  this.physics.world.setBounds(0, -50, 6400, 690)
   player.setCollideWorldBounds(true);
-
-  this.cameras.main.setBounds(0,0,3200, 640)
-  this.cameras.main.startFollow(player);
+  this.myCam = this.cameras.main.setBounds(0, 0, 6400, 640)
+  this.myCam.startFollow(player);
   this.physics.add.collider(player, platforms);
   
-  //----------   Items  ------------//
-  burritos = this.physics.add.group({
-    key: 'burrito',
-    repeat: 31,
-    setXY: { x: 32, y: 0, stepX: 170 }
-  });
-  burritos.children.iterate(function(child) {
-    child.setBounceY(Phaser.Math.FloatBetween(0.2, 0.4));
-  });
-  this.physics.add.collider(burritos, platforms);
+
+  this.bg_1.tilePositionX = this.myCam.scrollX * 5;
   
+  //----------   Items (Burritos) ------------//
+  this.burritos = this.physics.add.group({
+    allowGravity: false,
+    immovable: true
+  });
+  const burritoObjects = map.getObjectLayer('Burritos')['objects'];
+  burritoObjects.forEach(burritoObject => {
+    const burrito = this.burritos.create(burritoObject.x+21, burritoObject.y-11, 'burrito');
+  });
+
   //----------   Life Bar   ------------//
-  lifeText = this.add.text(16,16, 'Life: 100%', { fontSize: '32px', fill: '#000' });
-  lifeText.setScrollFactor(0);   // Moves life text with camera
-
-  function makeBar(x,y,color) {
-    let bar = this.add.graphics();
-    bar.fillStyle(color, 1);
-    bar.fillRect(200,30,200,50);
-    bar.x = x;
-    bar.y = y;
-    return bar;
-  }
+  let lifeBarText = this.add.text(20, 5, 'Health', { fontsize: '8px', fill: '#000'});
+  lifeBarText.setScrollFactor(0);
+  let lifeBar = this.add.graphics();
+  lifeBar.fillStyle('0x2ecc71', 1);
+  lifeBar.fillRect(15,20,200,15);
+  lifeBar.setScrollFactor(0); 
   
-  function setValue(bar, percentage) {
-    bar.scaleX = percentage/100;
-  }
-
-  let lifeBar = makeBar(140,100,0x2ecc71);
-  this.setValue(lifeBar, 50);
-
   function collectBurrito (player, burrito) {  // life is gained for every burrito
     burrito.disableBody(true, true)
     if (life >= 96) life = 100;
     else life += 5;
-    lifeText.setText('Life: ' + life + '%');
+    lifeBar.scaleX = life / 100 ;
   }
-
-  this.physics.add.overlap(player, burritos, collectBurrito, null, this);
-  timedEvent = this.time.addEvent({   // life is depleted every 1s
+  this.physics.add.overlap(player, this.burritos, collectBurrito, null, this);
+  timedEvent = this.time.addEvent({   // life is depleted every 1.25 seconds
     delay: 1000, 
     callback: () => {
       if (life >= 5) life -= 5;
-      lifeText.setText('Life: ' + life + '%');
+      lifeBar.scaleX = life / 100 ;
     },
     callbackScope: this,
     loop: true
   })
+  
 
+  
   //----------   Win Condition   ------------//
   function win () { exit = true }
   winText = this.add.text(400, 320, 'You Win!', { fontSize: '72px', fill: '#000' });
@@ -120,7 +114,7 @@ function create () {
   loseText = this.add.text(400, 320, 'Game Over!', { fontSize: '72px', fill: '#000' });
   loseText.setOrigin(0.5).setBackgroundColor('#FFF').setScrollFactor(0);
   loseText.visible = false;
-  this.physics.add.overlap(player, exitDoors, win, null, this);
+  this.physics.add.overlap(player, exitDoor, win, null, this);
 
   //----------   Character sprite animations   ------------//
   this.anims.create({
@@ -160,6 +154,7 @@ function create () {
 }  
 
 function update () {
+  
   // Keyboard control
   if (cursors.left.isDown) {  
     player.setVelocityX(-220);
@@ -200,8 +195,6 @@ function update () {
   }
 }
 
-
-
 function gameOver(result) {
   console.log('game over function');
   if (result === 'win') {
@@ -210,7 +203,6 @@ function gameOver(result) {
   } else {
     this.loseText.visible = true;
     console.log('You Lost!');
-    //location.reload();
   }
 } 
 
