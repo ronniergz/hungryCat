@@ -6,7 +6,8 @@ var config = {
   physics: {
       default: 'arcade',
       arcade: {
-          gravity: { y: 1500 } //2000
+          debug: true,
+          gravity: { y: 1500 } 
       }
   },
   scene: {
@@ -17,23 +18,23 @@ var config = {
 };
 
 var game = new Phaser.Game(config);
-var direction = 'right';
+var cursors;
 var jumpReset = true;
+var fall = false;
 var exit = false;
-var life = 100;
-var lifeText = 100;
+var life;
+var lives = 3;
 var winText;
 var loseText;
+var lifeTimer;
+
 
 function preload () {
   this.load.image('background1', './assets/images/background-original.png');
   this.load.image('background2', './assets/images/background-front.png');
   this.load.image('burrito', './assets/images/burrito.png');
-  this.load.spritesheet('cat', 
-    './assets/cat.png',
-    { frameWidth: 82, frameHeight: 72 }
-    );
-  this.load.image('exitDoor', './assets/exitDoor.png')
+  this.load.atlas('cat', './assets/images/cat.png', './assets/images/cat.json');
+  this.load.image('exitDoor', './assets/images/exitDoor.png')
   this.load.image('tiles', './assets/tilesets/tilesheet.png');
   this.load.tilemapTiledJSON('map', './assets/tilemaps/level1.json')
 }
@@ -42,11 +43,9 @@ function create () {
   
   //----------   Scrolling Backgrounds   ------------//
   this.bg_1 = this.add.tileSprite(0, 0, 10000, game.config.height, 'background1'); // Background Image 1
-  this.bg_1.setOrigin(0, 0);
-  this.bg_1.setScrollFactor(.25);
+  this.bg_1.setOrigin(0, 0).setScrollFactor(.25);
   this.bg_1 = this.add.tileSprite(0, 0, 10000, game.config.height, 'background2'); // Background Image 2
-  this.bg_1.setOrigin(0, 0);
-  this.bg_1.setScrollFactor(.5);
+  this.bg_1.setOrigin(0, 0).setScrollFactor(.5);
   const map = this.make.tilemap({ key: 'map' });    // Bring in JSON tilemap
   const tileset = map.addTilesetImage('hungryCat', 'tiles');  // Create Tileset from JSON
   const platforms = map.createStaticLayer('Platforms', tileset, 0, 0);  // Bring in Platforms per JSON
@@ -54,20 +53,37 @@ function create () {
   cursors = this.input.keyboard.createCursorKeys(); 
 
   //----------   Exit Door   ------------//
-  exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
+  exitDoor = this.physics.add.image(450, 165, 'exitDoor');
+  //exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
   this.physics.add.collider(exitDoor, platforms);
-
+  
   //----------   Player   ------------//
-  player = this.physics.add.sprite(100, 450, 'cat');
+  player = this.physics.add.sprite(100, 325, 'cat', 'Jump06.png');
   player.setMaxVelocity(1000,1000);
-  this.physics.world.setBounds(0, -50, 6400, 690)
+  //*********  Resize Player and Exit Door Bounds **********/
+  this.time.addEvent({ 
+    delay: 1000, 
+    callback: () => {
+      player.body.setSize(player.width - 50, player.height, true) 
+      exitDoor.body.setSize(exitDoor.width - 50, exitDoor.height - 75).setOffset(25, 75);
+    },
+    callbackScope: this, 
+    loop: false
+  });
+  //*********************************************************/
+  this.physics.world.setBounds(0, -50, 6400, 790)  // allow player to jump above screen and fall into pit
   player.setCollideWorldBounds(true);
+  player.onWorldBounds = true;
+
+  this.physics.world.on('worldbounds', function(body) {console.log('Contact', body)});
+
   this.myCam = this.cameras.main.setBounds(0, 0, 6400, 640)
   this.myCam.startFollow(player);
   this.physics.add.collider(player, platforms);
-  
+
 
   this.bg_1.tilePositionX = this.myCam.scrollX * 5;
+
   
   //----------   Items (Burritos) ------------//
   this.burritos = this.physics.add.group({
@@ -80,13 +96,14 @@ function create () {
   });
 
   //----------   Life Bar   ------------//
+  life = 100;
   let lifeBarText = this.add.text(20, 5, 'Health', { fontsize: '8px', fill: '#000'});
   lifeBarText.setScrollFactor(0);
-  let lifeBar = this.add.graphics();
-  lifeBar.fillStyle('0x2ecc71', 1);
-  lifeBar.fillRect(15,20,200,15);
-  lifeBar.setScrollFactor(0); 
-  
+  let lifeBar = this.add.graphics({x: 15, y: 20});
+  lifeBar.fillStyle('0x2ecc71', 1).fillRect(0,0,200,15).setScrollFactor(0);
+  let livesText = this.add.text(20 , 40, 'Lives: ' + lives, { fontsize: '8px', fill: '#000'}) 
+  livesText.setScrollFactor(0);
+
   function collectBurrito (player, burrito) {  // life is gained for every burrito
     burrito.disableBody(true, true)
     if (life >= 96) life = 100;
@@ -94,18 +111,34 @@ function create () {
     lifeBar.scaleX = life / 100 ;
   }
   this.physics.add.overlap(player, this.burritos, collectBurrito, null, this);
-  timedEvent = this.time.addEvent({   // life is depleted every 1.25 seconds
+
+  lifeTimer = this.time.addEvent({   // life is depleted every 1 second
     delay: 1000, 
     callback: () => {
       if (life >= 5) life -= 5;
       lifeBar.scaleX = life / 100 ;
+      if (life <= 0) {
+        lifeTimer.remove();
+        death()  // play death animation
+        if (lives === 1) gameOver('lose');
+        else {
+          lives = lives-1;
+          this.time.addEvent({ 
+            delay: 1000, 
+            callback: () => { this.scene.restart()}, 
+            callbackScope: this, 
+          });
+        }
+      }
     },
     callbackScope: this,
     loop: true
   })
-  
 
-  
+  function fall() {
+    console.log('Fall!');
+  }
+
   //----------   Win Condition   ------------//
   function win () { exit = true }
   winText = this.add.text(400, 320, 'You Win!', { fontSize: '72px', fill: '#000' });
@@ -117,93 +150,124 @@ function create () {
   this.physics.add.overlap(player, exitDoor, win, null, this);
 
   //----------   Character sprite animations   ------------//
-  this.anims.create({
-    key: 'left',
-    frames: this.anims.generateFrameNumbers('cat', { start: 0, end: 7 }),
+  this.anims.create({   // Run
+    key: 'run',
+    frames: this.anims.generateFrameNames('cat', { 
+      prefix: 'Run',
+      suffix: '.png',
+      start: 1, 
+      end: 8, 
+      zeroPad: 2
+    }),
     frameRate: 10,
     repeat: -1
   });
-  this.anims.create({
-    key: 'right',
-    frames: this.anims.generateFrameNumbers('cat', { start: 8, end: 15 }),
+
+  this.anims.create({   // Idle
+
+    key: 'idle',
+    frames: this.anims.generateFrameNames('cat', { 
+      prefix: 'Idle',
+      suffix: '.png',
+      start: 1, 
+      end: 10, 
+      zeroPad: 2
+    }),
     frameRate: 10,
     repeat: -1
   });
-  this.anims.create({
-    key: 'idle-left',
-    frames: this.anims.generateFrameNumbers('cat', { start: 16, end: 25 }),
+
+  this.anims.create({   // Jump
+    key: 'jump',
+    repeat: 0,
+    frames: this.anims.generateFrameNames('cat', { 
+      prefix: 'Jump',
+      suffix: '.png',
+      start: 1, 
+      end: 8,
+      zeroPad: 2
+    }),
     frameRate: 10,
-    repeat: -1
   });
-  this.anims.create({
-    key: 'idle-right',
-    frames: this.anims.generateFrameNumbers('cat', { start: 26, end: 36 }),
+
+  this.anims.create({   // Dead
+    key: 'dead',
+    frames: this.anims.generateFrameNames('cat', { 
+      prefix: 'Dead',
+      suffix: '.png',
+      start: 1, 
+      end: 10, 
+      zeroPad: 2
+    }),
     frameRate: 10,
-    repeat: -1
-  });
-  this.anims.create({
-    key: 'jump-left',
-    frames: [ {key: 'cat', frame: 2 }],
-    frameRate: 20,
-  });
-  this.anims.create({
-    key: 'jump-right',
-    frames: [ {key: 'cat', frame: 10 }],
-    frameRate: 20,
   });
 }  
 
 function update () {
-  
-  // Keyboard control
-  if (cursors.left.isDown) {  
-    player.setVelocityX(-220);
-    direction = 'left';
-    if (player.body.onFloor()) player.anims.play('left', true);  // walk left
-    else player.anims.play('jump-left');  // jump left
-  } else if (cursors.right.isDown){ 
-    player.setVelocityX(220);
-    direction = 'right';
-    if (player.body.onFloor()) player.anims.play('right', true);  // walk right
-    else player.anims.play('jump-right');  // jump right
-  } else {
-      player.setVelocityX(0);
-      player.anims.play('idle-' + direction, true);
+  // Turn player sprite left or right based on movement
+  if (player.body.velocity.x < 0) player.flipX = true;
+  if (player.body.velocity.x > 0) player.flipX = false;
+
+  // Keyboard control, player movements
+  if (cursors.right.isDown  && life > 0){ 
+      player.setVelocityX(220);
+      if (player.body.onFloor()) player.play('run', true);  // run right
   } 
-  if (cursors.space.isDown && player.body.onFloor()) {  // Jump
+  else if (cursors.left.isDown && life > 0) {  
+    player.setVelocityX(-220);
+    if (player.body.onFloor()) player.play('run', true);  // run left
+  } 
+  else {
+    player.setVelocityX(0);
+    if (player.body.onFloor() && life > 0) player.play('idle', true);
+  } 
+  if (cursors.space.isDown && player.body.onFloor() && life > 0) {  // Jump
     if (jumpReset === true) {
-      player.setVelocityY(-800);  //900
+      player.setVelocityY(-800); 
+      player.play('jump');      
       jumpReset = false;
     }
   }
   if (cursors.space.isUp) jumpReset = true;
 
+  // Death by fall
+  // if (player.y > 680 ) fall = true; 
+  
+  // if (fall === true) {
+  //   this.physics.pause();
+  //   fall = false;
+  //   if (lives === 1) {
+  //     gameOver('lose');
+  //   } else {
+  //     lives = lives-1;
+  //     this.time.addEvent({ 
+  //       delay: 1000, 
+  //       callback: () => { this.scene.restart()}, 
+  //       callbackScope: this, 
+  //     });
+  //   }
+  // }
+
   // Win Detection
-  if (cursors.up.isDown && exit === true) {
+  if (exit === true) {
     gameOver('win');
     exit = false;
+    lifeTimer.remove();
     this.physics.pause();
-    location.reload();
-    
   }
 
-  // Death by fall or health
-  if (player.y > 600 || life === 0)  {   
-    player.setTint(0xff0000);
-    gameOver('lose');
-    this.physics.pause();
-  }
+}
+
+
+function death() {
+  player.setTint(0xff0000);
+  player.play('dead');
 }
 
 function gameOver(result) {
-  console.log('game over function');
-  if (result === 'win') {
-    console.log('You won the game, congratulations!');
-    this.winText.setVisible(true);
-  } else {
-    this.loseText.visible = true;
-    console.log('You Lost!');
-  }
+  if (result === 'win') this.winText.setVisible(true);
+  else this.loseText.visible = true;
+
 } 
 
 
