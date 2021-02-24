@@ -1,0 +1,117 @@
+:root {
+  /* Theme Config */
+  --primary: #383e56;
+  --secondary: #9fb8ad;
+  --light: #c5d7bd;
+  --trim: #fb743e;
+  --textDark: hsla(0, 0%, 16%, 1);
+  --textLight: #efefef;
+  --fontPrimary: Verdana, Geneva, Tahoma, sans-serif;
+  --shadow: 2px 2px 5px rgb(61, 61, 61);
+}
+
+body {
+  margin: 0;
+  font-family: var(--fontPrimary);
+  background-color: var(--primary);
+  color: var(--textLight);
+}
+
+.container {
+  padding: 0 3rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.section {
+  width: 100%;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+#banner {
+}
+
+#logo {
+  height: 25vw;
+  max-height: 150px;
+  margin: 3rem;
+}
+
+#coverImg {
+  border-radius: 50%;
+  width: 50vw;
+  max-width: 350px;
+  box-shadow: var(--shadow);
+  transition: 0.2s ease;
+}
+
+#coverImg:hover {
+  transform: scale(1.05);
+  transition: 0.2s ease;
+}
+
+/* ------------------  Start Button ------------------*/
+#startButton {
+  text-decoration: none;
+  background-color: var(--trim);
+  border-radius: 4rem;
+  display: block;
+  width: 12rem;
+  height: 3rem;
+  margin: 5rem auto;
+  color: var(--lightText);
+  transition: transform 0.5s ease;
+  box-shadow: var(--shadow);
+}
+
+#startButton:hover {
+  text-decoration: none;
+  cursor: pointer;
+  transform: scale(1.05);
+  transition: 0.2s ease;
+}
+
+#startButtonText {
+  line-height: 3rem;
+  font-size: 1.25rem;
+}
+
+#description {
+  height: 20rem;
+}
+
+#controls {
+  height: 25rem;
+  color: var(--textDark);
+}
+
+#ctrlBackground {
+  height: 20rem;
+  width: 80%;
+  margin: 0 auto;
+  background-color: var(--textLight);
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.keys {
+  height: 4rem;
+}
+
+#footer {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 10rem;
+}
+
+#credit {
+  font-size: 0.8rem;
+}
+
+@media (min-width: 600px) {
+  #coverImg {
+    width: ;
+  }
+}

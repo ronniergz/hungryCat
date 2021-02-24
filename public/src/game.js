@@ -27,6 +27,7 @@ var livesText;
 var winText;
 var loseText;
 var lifeTimer;
+var jumpTimer = 0;
 
 function preload () {
   this.load.image('background1', './assets/images/background-original.png');
@@ -225,38 +226,43 @@ function update () {
 
   // Keyboard control, player movements
   if (cursors.right.isDown  && life > 0){ 
-      player.setVelocityX(220);
-      if (player.body.onFloor()) player.play('run', true);  // run right
-  } 
-  else if (cursors.left.isDown && life > 0) {  
+    player.setVelocityX(220);
+    if (player.body.onFloor()) player.play('run', true);  // Run right
+    else player.play('jump', true);  // Falling Right
+  } else if (cursors.left.isDown && life > 0) {  
     player.setVelocityX(-220);
-    if (player.body.onFloor()) player.play('run', true);  // run left
-  } 
-  else {
+    if (player.body.onFloor()) player.play('run', true);  // Run left
+    else player.play('jump', true); // Falling Left
+  } else {
     player.setVelocityX(0);
     if (player.body.onFloor() && life > 0) player.play('idle', true);
   } 
-  if (cursors.space.isDown && player.body.onFloor() && life > 0) {  // Jump
-    if (jumpReset === true) {
-      player.setVelocityY(-800);  
-      player.play('jump');      
-      jumpReset = false;
-    }
+  if (cursors.space.isDown && life > 0) {  // Jump with different velocities
+      if (player.body.onFloor() && jumpTimer === 0) {  // Initiate Jump
+        jumpTimer = 1;
+        player.setVelocityY(-500);
+        player.play('jump');
+      } else if (jumpTimer > 0 && jumpTimer < 17) { // Jump button is held, keep jumping higher
+        jumpTimer++;
+        player.setVelocityY(-500 + (jumpTimer*2));
+      }    
   }
-  if (cursors.space.isUp) jumpReset = true;
-
+  if (cursors.space.isUp) jumpTimer = 0; // player is no longer holding the jump button
+  
   // Win Detection
   if (exit === true) {
     gameOver('win');
     exit = false;
     lifeTimer.remove();
     this.physics.pause();
-    //player.destroy();
-    setTimeout(() => {this.scene.restart()}, 3000);
+    setTimeout(() => {
+      player.destroy();
+      lives = 3;
+      this.scene.restart()
+    }, 3000);
   }
 
 }
-
 
 function death() {
   player.setTint(0xff0000);

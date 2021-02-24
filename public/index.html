@@ -3,19 +3,59 @@
 
 <head>
   <title>Hungry Cat</title>
-  <!-- <script src="https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js"></script> -->
+  <script src="https://kit.fontawesome.com/6bc129a47c.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="/styles/index.css">
+
 </head>
 
 <body>
 
-  <div id="landingSection">
-    <h1>Hungry Cat</h1>
-    <p>This cat is craving burritos in the worst way</p>
-    <h4>Controls:</h4>
-    <p>Up-Down-Left-Right to move</p>
-    <p>Spacebar to jump</p>     
-    <h4>Find the exit door to win!</h4>
-    <a href='/game'><button id="startButton">Start Game</button></a> 
+  <div class="container">
+
+    <div class='section' id="banner">
+      <div>
+        <img id='logo' src='logo.svg' />
+      </div>
+      <div>
+        <img id="coverImg" src="Cover.jpg" />
+      </div>
+
+      <div>
+        <a href='/game' id="startButton">
+          <span id="startButtonText">Start Game</span>
+        </a> 
+      </div>
+
+    </div>
+
+    <div class='section' id="description">
+      <p>This cat is craving burritos in the worst way.</p>
+      <p>Keep scarfing them down to keep your health up.  Go too long without one, and you're dead.</p>
+      <p>Make it to the exit door to win!</p>
+    </div>
+    
+    <div class='section' id="controls">
+      <div id="ctrlBackground">
+        <h2>Controls</h2>
+        <div>
+          <p>Jump</p>
+          <img class="keys" id="spacebar.svg" src="spacebar.svg" />
+        </div>
+        <div>
+          <p>Move</p>
+          <img class="keys" id="arrowLeft.svg" src="arrowLeft.svg" />
+          <img class="keys" id="arrowRight.svg" src="arrowRight.svg" />
+        </div>
+      </div>
+
+    </div>
+
+    <div class='section' id="footer">
+      <div id="credit">
+        <p>©2021 ronniergz</p>
+      </div>
+    </div>
+
   </div>
 
 </body>
