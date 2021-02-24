@@ -6,7 +6,7 @@ var config = {
   physics: {
       default: 'arcade',
       arcade: {
-          debug: true,
+          debug: false,
           gravity: { y: 1500 } 
       }
   },
@@ -20,14 +20,13 @@ var config = {
 var game = new Phaser.Game(config);
 var cursors;
 var jumpReset = true;
-var fall = false;
 var exit = false;
 var life;
 var lives = 3;
+var livesText;
 var winText;
 var loseText;
 var lifeTimer;
-
 
 function preload () {
   this.load.image('background1', './assets/images/background-original.png');
@@ -53,14 +52,15 @@ function create () {
   cursors = this.input.keyboard.createCursorKeys(); 
 
   //----------   Exit Door   ------------//
-  exitDoor = this.physics.add.image(450, 165, 'exitDoor');
-  //exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
+  //exitDoor = this.physics.add.image(450, 165, 'exitDoor');
+  exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
   this.physics.add.collider(exitDoor, platforms);
   
   //----------   Player   ------------//
   player = this.physics.add.sprite(100, 325, 'cat', 'Jump06.png');
   player.setMaxVelocity(1000,1000);
-  //*********  Resize Player and Exit Door Bounds **********/
+
+  //********  Decrease Player & Exit Door Boundaries  *******/
   this.time.addEvent({ 
     delay: 1000, 
     callback: () => {
@@ -71,19 +71,34 @@ function create () {
     loop: false
   });
   //*********************************************************/
+
   this.physics.world.setBounds(0, -50, 6400, 790)  // allow player to jump above screen and fall into pit
   player.setCollideWorldBounds(true);
-  player.onWorldBounds = true;
-
-  this.physics.world.on('worldbounds', function(body) {console.log('Contact', body)});
+  player.body.onWorldBounds = true;
+  // Check for a fall into a pit
+  this.physics.world.on('worldbounds', (body, up, down) => { 
+    if (down) {
+      lifeTimer.remove();
+      lives--;
+      livesText.setText('Lives: ' + lives);
+      this.physics.pause();
+      death();
+      if (lives === 0) gameOver('lose') 
+      else {
+        delay = this.time.addEvent({ 
+          delay: 1000, 
+          callback: () => { this.scene.restart()}, 
+          callbackScope: this, 
+        });
+      }
+    };
+  });  
 
   this.myCam = this.cameras.main.setBounds(0, 0, 6400, 640)
   this.myCam.startFollow(player);
   this.physics.add.collider(player, platforms);
 
-
   this.bg_1.tilePositionX = this.myCam.scrollX * 5;
-
   
   //----------   Items (Burritos) ------------//
   this.burritos = this.physics.add.group({
@@ -95,13 +110,13 @@ function create () {
     const burrito = this.burritos.create(burritoObject.x+21, burritoObject.y-11, 'burrito');
   });
 
-  //----------   Life Bar   ------------//
+  //--------------   Life Bar   ---------------//
   life = 100;
   let lifeBarText = this.add.text(20, 5, 'Health', { fontsize: '8px', fill: '#000'});
   lifeBarText.setScrollFactor(0);
   let lifeBar = this.add.graphics({x: 15, y: 20});
   lifeBar.fillStyle('0x2ecc71', 1).fillRect(0,0,200,15).setScrollFactor(0);
-  let livesText = this.add.text(20 , 40, 'Lives: ' + lives, { fontsize: '8px', fill: '#000'}) 
+  livesText = this.add.text(20 , 40, 'Lives: ' + lives, { fontsize: '8px', fill: '#000'}) 
   livesText.setScrollFactor(0);
 
   function collectBurrito (player, burrito) {  // life is gained for every burrito
@@ -119,10 +134,11 @@ function create () {
       lifeBar.scaleX = life / 100 ;
       if (life <= 0) {
         lifeTimer.remove();
-        death()  // play death animation
-        if (lives === 1) gameOver('lose');
+        lives = lives-1;
+        livesText.setText('Lives: ' + lives);
+        death()               // play death animation
+        if (lives === 0) gameOver('lose');
         else {
-          lives = lives-1;
           this.time.addEvent({ 
             delay: 1000, 
             callback: () => { this.scene.restart()}, 
@@ -135,15 +151,14 @@ function create () {
     loop: true
   })
 
-  function fall() {
-    console.log('Fall!');
-  }
-
   //----------   Win Condition   ------------//
   function win () { exit = true }
   winText = this.add.text(400, 320, 'You Win!', { fontSize: '72px', fill: '#000' });
   winText.setOrigin(0.5).setBackgroundColor('#FFF').setScrollFactor(0);
   winText.visible = false;
+  deathText = this.add.text(400, 320, 'You Died!', { fontSize: '72px', fill: '#000' });
+  deathText.setOrigin(0.5).setBackgroundColor('#FFF').setScrollFactor(0);
+  deathText.visible = false;
   loseText = this.add.text(400, 320, 'Game Over!', { fontSize: '72px', fill: '#000' });
   loseText.setOrigin(0.5).setBackgroundColor('#FFF').setScrollFactor(0);
   loseText.visible = false;
@@ -223,30 +238,12 @@ function update () {
   } 
   if (cursors.space.isDown && player.body.onFloor() && life > 0) {  // Jump
     if (jumpReset === true) {
-      player.setVelocityY(-800); 
+      player.setVelocityY(-800);  
       player.play('jump');      
       jumpReset = false;
     }
   }
   if (cursors.space.isUp) jumpReset = true;
-
-  // Death by fall
-  // if (player.y > 680 ) fall = true; 
-  
-  // if (fall === true) {
-  //   this.physics.pause();
-  //   fall = false;
-  //   if (lives === 1) {
-  //     gameOver('lose');
-  //   } else {
-  //     lives = lives-1;
-  //     this.time.addEvent({ 
-  //       delay: 1000, 
-  //       callback: () => { this.scene.restart()}, 
-  //       callbackScope: this, 
-  //     });
-  //   }
-  // }
 
   // Win Detection
   if (exit === true) {
@@ -254,6 +251,8 @@ function update () {
     exit = false;
     lifeTimer.remove();
     this.physics.pause();
+    //player.destroy();
+    setTimeout(() => {this.scene.restart()}, 3000);
   }
 
 }
@@ -262,12 +261,15 @@ function update () {
 function death() {
   player.setTint(0xff0000);
   player.play('dead');
+  this.deathText.visible = true;
 }
 
 function gameOver(result) {
   if (result === 'win') this.winText.setVisible(true);
-  else this.loseText.visible = true;
-
+  else {
+    this.deathText.visible = false;
+    this.loseText.visible = true;
+  }
 } 
 
 
