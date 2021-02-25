@@ -53,8 +53,8 @@ function create () {
   cursors = this.input.keyboard.createCursorKeys(); 
 
   //----------   Exit Door   ------------//
-  exitDoor = this.physics.add.image(450, 165, 'exitDoor');
-  //exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
+  //exitDoor = this.physics.add.image(450, 165, 'exitDoor');
+  exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
   this.physics.add.collider(exitDoor, platforms);
   
   //----------   Player   ------------//
