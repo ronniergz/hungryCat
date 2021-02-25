@@ -53,8 +53,8 @@ function create () {
   cursors = this.input.keyboard.createCursorKeys(); 
 
   //----------   Exit Door   ------------//
-  //exitDoor = this.physics.add.image(450, 165, 'exitDoor');
-  exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
+  exitDoor = this.physics.add.image(450, 165, 'exitDoor');
+  //exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
   this.physics.add.collider(exitDoor, platforms);
   
   //----------   Player   ------------//
@@ -129,7 +129,7 @@ function create () {
   this.physics.add.overlap(player, this.burritos, collectBurrito, null, this);
 
   lifeTimer = this.time.addEvent({   // life is depleted every 1 second
-    delay: 1000, 
+    delay: 1200, 
     callback: () => {
       if (life >= 5) life -= 5;
       lifeBar.scaleX = life / 100 ;
@@ -255,8 +255,8 @@ function update () {
     exit = false;
     lifeTimer.remove();
     this.physics.pause();
+    player.destroy();
     setTimeout(() => {
-      player.destroy();
       lives = 3;
       this.scene.restart()
     }, 3000);
