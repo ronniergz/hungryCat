@@ -1,6 +1,15 @@
+#container {
+  text-align: center;
+}
+
 #gameSection {
   border: 4px gray solid;
   border-radius: 3px;
   height: 640px;
   width: 800px;
+  margin: 0 auto 1rem auto;
+}
+
+.button {
+  margin: 1rem;
 }
