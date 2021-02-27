@@ -13,8 +13,12 @@
   --zoomTransition: 0.2s ease;
 }
 
-body {
+body,
+p {
   margin: 0;
+}
+
+body {
   font-family: var(--fontPrimary);
   background-color: var(--primary);
   color: var(--textLight);
