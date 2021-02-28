@@ -3,9 +3,6 @@ var config = {
   parent: 'gameSection',
   width: 800,
   height: 1040,
-  input: {
-    activePointers: 2,
-  },
   physics: {
     default: 'arcade',
     arcade: {
@@ -55,14 +52,25 @@ function create () {
   this.bg_1.setOrigin(0, 0).setScrollFactor(.25);
   this.bg_2 = this.add.tileSprite(0, 0, 10000, 640, 'background2'); // Background Image 2
   this.bg_2.setOrigin(0, 0).setScrollFactor(.5);
-  // this.bg_3 = this.add.tileSprite(0, 640, 800, 400, 'background3');  // Background for buttons
-  // this.bg_3.setOrigin(0, 0);
   const map = this.make.tilemap({ key: 'map' });    // Bring in JSON tilemap
   const tileset = map.addTilesetImage('hungryCat', 'tiles');  // Create Tileset from JSON
   const platforms = map.createStaticLayer('Platforms', tileset, 0, 0);  // Bring in Platforms per JSON
   platforms.setCollisionByExclusion(-1, true);
+  
+//----------   Exit Door   ------------//
+//exitDoor = this.physics.add.image(450, 165, 'exitDoor');
+exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
+this.physics.add.collider(exitDoor, platforms);
 
-  //-------  Keyboard Control Buttons  --------//
+//----------   Player   ------------//
+player = this.physics.add.sprite(100, 325, 'cat', 'Jump06.png');
+player.setMaxVelocity(1000,1000);
+
+//------------   Button Background ------------//
+this.bg_3 = this.add.tileSprite(0, 640, 10000, 400, 'background3');  // Background for buttons
+this.bg_3.setOrigin(0, 0);
+
+//-------  Keyboard Control Buttons  --------//
 this.input.keyboard.on('keydown', (event) => {
   if (event.code === 'ArrowLeft') moveLeft = true;
   if (event.code === 'ArrowRight') moveRight = true;
@@ -74,37 +82,33 @@ this.input.keyboard.on('keyup', (event) => {
   if (event.code === 'Space') jumpPressed = false;
 });
 
-console.log(this.input.manager.pointersTotal);
-  //-------  On Screen Control Buttons  --------//
-  buttonLeft = this.add.image(125, 850, 'button-left');
-  buttonLeft.setScrollFactor(0).setInteractive();;
-  buttonLeft
-    .on('pointerdown' ,() => moveLeft = true)
-    .on('pointerup',() => moveLeft = false);
 
-  buttonRight = this.add.image(300, 850, 'button-right');
-  buttonRight.setScrollFactor(0).setInteractive();;
-  buttonRight
-    .on('pointerdown' ,() => moveRight = true)
-    .on('pointerup' ,() => moveRight = false);
 
-  buttonJump = this.add.image(625, 850, 'button-jump');
-  buttonJump.setScrollFactor(0).setInteractive();
-  buttonJump
-    .on('pointerdown' ,() => jumpPressed = true)  
-    .on('pointerup' ,() => jumpPressed = false);
+//-------  On Screen Control Buttons  --------//
+this.input.addPointer(2);
+buttonLeft = this.add.sprite(125, 850, 'button-left');
+buttonLeft.setScrollFactor(0).setInteractive();
+buttonRight = this.add.image(300, 850, 'button-right');
+buttonRight.setScrollFactor(0).setInteractive()
+buttonJump = this.add.image(625, 850, 'button-jump');
+buttonJump.setScrollFactor(0).setInteractive();
+this.input.on('gameobjectdown', (pointer, gameObject, event) => {
+  if (gameObject == buttonLeft) moveLeft = true;
+  if (gameObject == buttonRight) moveRight = true;
+  if (gameObject == buttonJump) jumpPressed = true;
+});
+this.input.on('gameobjectup', (pointer, gameObject, event) => {
+  if (gameObject == buttonLeft) moveLeft = false;
+  if (gameObject == buttonRight) moveRight = false;
+  if (gameObject == buttonJump) jumpPressed = false;
+});
+this.input.on('gameobjectmove', (pointer, gameObject, event) => {
+  if (gameObject == buttonLeft) moveLeft = false;
+  if (gameObject == buttonRight) moveRight = false;
+  if (gameObject == buttonJump) jumpPressed = false;
+});
 
-    
-  //----------   Exit Door   ------------//
-  //exitDoor = this.physics.add.image(450, 165, 'exitDoor');
-  exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
-  this.physics.add.collider(exitDoor, platforms);
-  
-  //----------   Player   ------------//
-  player = this.physics.add.sprite(100, 325, 'cat', 'Jump06.png');
-  player.setMaxVelocity(1000,1000);
-
-  //********  Decrease Player & Exit Door Boundaries  *******/
+//********  Decrease Player & Exit Door Boundaries  *******/
   this.time.addEvent({ 
     delay: 1000, 
     callback: () => {
