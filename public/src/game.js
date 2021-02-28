@@ -3,17 +3,20 @@ var config = {
   parent: 'gameSection',
   width: 800,
   height: 1040,
+  input: {
+    activePointers: 2,
+  },
   physics: {
-      default: 'arcade',
-      arcade: {
-          debug: false,
-          gravity: { y: 1500 } 
-      }
+    default: 'arcade',
+    arcade: {
+      debug: false,
+      gravity: { y: 1500 } 
+    }
   },
   scene: {
-      preload: preload,
-      create: create,
-      update: update
+    preload: preload,
+    create: create,
+    update: update
   }
 };
 
@@ -71,12 +74,13 @@ this.input.keyboard.on('keyup', (event) => {
   if (event.code === 'Space') jumpPressed = false;
 });
 
+console.log(this.input.manager.pointersTotal);
   //-------  On Screen Control Buttons  --------//
   buttonLeft = this.add.image(125, 850, 'button-left');
   buttonLeft.setScrollFactor(0).setInteractive();;
   buttonLeft
     .on('pointerdown' ,() => moveLeft = true)
-    .on('pointerup', () => moveLeft = false);
+    .on('pointerup',() => moveLeft = false);
 
   buttonRight = this.add.image(300, 850, 'button-right');
   buttonRight.setScrollFactor(0).setInteractive();;
