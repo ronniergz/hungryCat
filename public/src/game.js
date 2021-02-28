@@ -30,6 +30,8 @@ var jumpTimer = 0;
 var moveLeft = false;
 var moveRight = false;
 var jumpPressed = false;
+var joystickX = 175;
+var joystickY = 850;
 
 function preload () {
   this.load.image('background1', './assets/images/background-original.png');
@@ -38,6 +40,7 @@ function preload () {
   this.load.image('burrito', './assets/images/burrito.png');
   this.load.atlas('cat', './assets/images/cat.png', './assets/images/cat.json');
   this.load.image('exitDoor', './assets/images/exitDoor.png')
+  this.load.image('joystick', "./assets/images/joystick.png");
   this.load.image('button-left', "./assets/images/button-left.png");
   this.load.image('button-right', "./assets/images/button-right.png");
   this.load.image('button-jump', "./assets/images/button-jump.png");
@@ -82,31 +85,42 @@ this.input.keyboard.on('keyup', (event) => {
   if (event.code === 'Space') jumpPressed = false;
 });
 
-
-
 //-------  On Screen Control Buttons  --------//
-this.input.addPointer(2);
-buttonLeft = this.add.sprite(125, 850, 'button-left');
-buttonLeft.setScrollFactor(0).setInteractive();
-buttonRight = this.add.image(300, 850, 'button-right');
-buttonRight.setScrollFactor(0).setInteractive()
+// - - - - -   Joystick  - - - - -  //
+joystick = this.add.image(joystickX, joystickY, 'joystick');
+joystick.setScrollFactor(0).setInteractive({ draggable: true });
+this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+  gameObject.x = dragX;
+  gameObject.y = dragY;
+  if (dragX > joystickX) {
+    moveRight = true;
+    moveLeft = false;
+  } else if (dragX < joystickX) {
+    moveLeft = true; 
+    moveRight = false;
+  };
+});
+// - - - - -   Jump  - - - - -  //
 buttonJump = this.add.image(625, 850, 'button-jump');
 buttonJump.setScrollFactor(0).setInteractive();
 this.input.on('gameobjectdown', (pointer, gameObject, event) => {
-  if (gameObject == buttonLeft) moveLeft = true;
-  if (gameObject == buttonRight) moveRight = true;
   if (gameObject == buttonJump) jumpPressed = true;
 });
-this.input.on('gameobjectup', (pointer, gameObject, event) => {
-  if (gameObject == buttonLeft) moveLeft = false;
-  if (gameObject == buttonRight) moveRight = false;
-  if (gameObject == buttonJump) jumpPressed = false;
-});
 this.input.on('gameobjectmove', (pointer, gameObject, event) => {
-  if (gameObject == buttonLeft) moveLeft = false;
-  if (gameObject == buttonRight) moveRight = false;
   if (gameObject == buttonJump) jumpPressed = false;
 });
+
+// - - - -   Reset Buttons on release  - - - -  //
+this.input.on('gameobjectup', (pointer, gameObject, event) => {
+  if (gameObject == buttonJump) jumpPressed = false;
+  if (gameObject == joystick) {
+    gameObject.x = joystickX;
+    gameObject.y = joystickY;
+    moveRight = false;
+    moveLeft = false;
+  }
+});
+
 
 //********  Decrease Player & Exit Door Boundaries  *******/
   this.time.addEvent({ 
@@ -269,11 +283,12 @@ this.input.on('gameobjectmove', (pointer, gameObject, event) => {
 }  
 
 function update () {
-  // Turn player sprite left or right based on movement
-  if (player.body.velocity.x < 0) player.flipX = true;
-  if (player.body.velocity.x > 0) player.flipX = false;
-
   if (life > 0) {
+   
+    // Turn player sprite left or right based on movement
+    if (player.body.velocity.x < 0) player.flipX = true;
+    if (player.body.velocity.x > 0) player.flipX = false;
+
     // Keyboard control, player movements
     if (moveRight){ 
       player.setVelocityX(220);
