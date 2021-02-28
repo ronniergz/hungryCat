@@ -2,7 +2,7 @@ var config = {
   type: Phaser.AUTO, 
   parent: 'gameSection',
   width: 800,
-  height: 640,
+  height: 1040,
   physics: {
       default: 'arcade',
       arcade: {
@@ -18,8 +18,6 @@ var config = {
 };
 
 var game = new Phaser.Game(config);
-var cursors;
-var jumpReset = true;
 var exit = false;
 var life;
 var lives = 3;
@@ -28,30 +26,71 @@ var winText;
 var loseText;
 var lifeTimer;
 var jumpTimer = 0;
+// On Screen buttons
+var moveLeft = false;
+var moveRight = false;
+var jumpPressed = false;
 
 function preload () {
   this.load.image('background1', './assets/images/background-original.png');
   this.load.image('background2', './assets/images/background-front.png');
+  this.load.image('background3', './assets/images/background-buttons.jpg');
   this.load.image('burrito', './assets/images/burrito.png');
   this.load.atlas('cat', './assets/images/cat.png', './assets/images/cat.json');
   this.load.image('exitDoor', './assets/images/exitDoor.png')
+  this.load.image('button-left', "./assets/images/button-left.png");
+  this.load.image('button-right', "./assets/images/button-right.png");
+  this.load.image('button-jump', "./assets/images/button-jump.png");
   this.load.image('tiles', './assets/tilesets/tilesheet.png');
-  this.load.tilemapTiledJSON('map', './assets/tilemaps/level1.json')
+  this.load.tilemapTiledJSON('map', './assets/tilemaps/level1.json');
 }
 
 function create () {
   
   //----------   Scrolling Backgrounds   ------------//
-  this.bg_1 = this.add.tileSprite(0, 0, 10000, game.config.height, 'background1'); // Background Image 1
+  this.bg_1 = this.add.tileSprite(0, 0, 10000, 640, 'background1'); // Background Image 1
   this.bg_1.setOrigin(0, 0).setScrollFactor(.25);
-  this.bg_1 = this.add.tileSprite(0, 0, 10000, game.config.height, 'background2'); // Background Image 2
-  this.bg_1.setOrigin(0, 0).setScrollFactor(.5);
+  this.bg_2 = this.add.tileSprite(0, 0, 10000, 640, 'background2'); // Background Image 2
+  this.bg_2.setOrigin(0, 0).setScrollFactor(.5);
+  // this.bg_3 = this.add.tileSprite(0, 640, 800, 400, 'background3');  // Background for buttons
+  // this.bg_3.setOrigin(0, 0);
   const map = this.make.tilemap({ key: 'map' });    // Bring in JSON tilemap
   const tileset = map.addTilesetImage('hungryCat', 'tiles');  // Create Tileset from JSON
   const platforms = map.createStaticLayer('Platforms', tileset, 0, 0);  // Bring in Platforms per JSON
   platforms.setCollisionByExclusion(-1, true);
-  cursors = this.input.keyboard.createCursorKeys(); 
 
+  //-------  Keyboard Control Buttons  --------//
+this.input.keyboard.on('keydown', (event) => {
+  if (event.code === 'ArrowLeft') moveLeft = true;
+  if (event.code === 'ArrowRight') moveRight = true;
+  if (event.code === 'Space') jumpPressed = true;
+});
+this.input.keyboard.on('keyup', (event) => {
+  if (event.code === 'ArrowLeft') moveLeft = false;
+  if (event.code === 'ArrowRight') moveRight = false;
+  if (event.code === 'Space') jumpPressed = false;
+});
+
+  //-------  On Screen Control Buttons  --------//
+  buttonLeft = this.add.image(125, 850, 'button-left');
+  buttonLeft.setScrollFactor(0).setInteractive();;
+  buttonLeft
+    .on('pointerdown' ,() => moveLeft = true)
+    .on('pointerup', () => moveLeft = false);
+
+  buttonRight = this.add.image(300, 850, 'button-right');
+  buttonRight.setScrollFactor(0).setInteractive();;
+  buttonRight
+    .on('pointerdown' ,() => moveRight = true)
+    .on('pointerup' ,() => moveRight = false);
+
+  buttonJump = this.add.image(625, 850, 'button-jump');
+  buttonJump.setScrollFactor(0).setInteractive();
+  buttonJump
+    .on('pointerdown' ,() => jumpPressed = true)  
+    .on('pointerup' ,() => jumpPressed = false);
+
+    
   //----------   Exit Door   ------------//
   //exitDoor = this.physics.add.image(450, 165, 'exitDoor');
   exitDoor = this.physics.add.image(6304, 165, 'exitDoor');
@@ -94,9 +133,11 @@ function create () {
       }
     };
   });  
+  //---------------   Camera   ---------------//
 
-  this.myCam = this.cameras.main.setBounds(0, 0, 6400, 640)
+  this.myCam = this.cameras.main.setViewport(0, 0, 800, 1040).setBounds(0, 0, 6400, 640)
   this.myCam.startFollow(player);
+
   this.physics.add.collider(player, platforms);
 
   this.bg_1.tilePositionX = this.myCam.scrollX * 5;
@@ -224,30 +265,34 @@ function update () {
   if (player.body.velocity.x < 0) player.flipX = true;
   if (player.body.velocity.x > 0) player.flipX = false;
 
-  // Keyboard control, player movements
-  if (cursors.right.isDown  && life > 0){ 
-    player.setVelocityX(220);
-    if (player.body.onFloor()) player.play('run', true);  // Run right
-    else player.play('jump', true);  // Falling Right
-  } else if (cursors.left.isDown && life > 0) {  
-    player.setVelocityX(-220);
-    if (player.body.onFloor()) player.play('run', true);  // Run left
-    else player.play('jump', true); // Falling Left
-  } else {
-    player.setVelocityX(0);
-    if (player.body.onFloor() && life > 0) player.play('idle', true);
-  } 
-  if (cursors.space.isDown && life > 0) {  // Jump with different velocities
-      if (player.body.onFloor() && jumpTimer === 0) {  // Initiate Jump
-        jumpTimer = 1;
-        player.setVelocityY(-500);
-        player.play('jump');
-      } else if (jumpTimer > 0 && jumpTimer < 17) { // Jump button is held, keep jumping higher
-        jumpTimer++;
-        player.setVelocityY(-500 + (jumpTimer*2));
-      }    
+  if (life > 0) {
+    // Keyboard control, player movements
+    if (moveRight){ 
+      player.setVelocityX(220);
+      if (player.body.onFloor()) player.play('run', true);  // Run right
+      else player.play('jump', true);  // Falling Right
+    } else if (moveLeft) {  
+      player.setVelocityX(-220);
+      if (player.body.onFloor()) player.play('run', true);  // Run left
+      else player.play('jump', true); // Falling Left
+    } else {
+      player.setVelocityX(0);
+      if (player.body.onFloor()) player.play('idle', true);
+    } 
+    if (jumpPressed) {  // Jump with different velocities
+        if (player.body.onFloor() && jumpTimer === 0) {  // Initiate Jump
+          jumpTimer = 1;
+          player.setVelocityY(-500);
+          player.play('jump');
+        } else if (jumpTimer > 0 && jumpTimer < 17) { // Jump button is held, keep jumping higher
+          jumpTimer++;
+          player.setVelocityY(-500 + (jumpTimer*2));
+        }    
+      }
+      if (jumpPressed === false) jumpTimer = 0; // player is no longer holding the jump button
+        
   }
-  if (cursors.space.isUp) jumpTimer = 0; // player is no longer holding the jump button
+
   
   // Win Detection
   if (exit === true) {
