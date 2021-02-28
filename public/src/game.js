@@ -105,6 +105,12 @@ this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
     moveRight = false;
   };
 });
+this.input.on('dragend', (pointer, gameObject, dragX, dragY) => {
+  gameObject.x = joystickX;
+  gameObject.y = joystickY;
+  moveRight = false;
+  moveLeft = false;
+});
 // - - - - -   Jump  - - - - -  //
 buttonJump = this.add.image(625, 850, 'button-jump');
 buttonJump.setScrollFactor(0).setInteractive();
@@ -116,15 +122,12 @@ this.input.on('gameobjectmove', (pointer, gameObject, event) => {
 });
 
 // - - - -   Reset Buttons on release  - - - -  //
+
 this.input.on('gameobjectup', (pointer, gameObject, event) => {
+  console.log(gameObject);
   if (gameObject == buttonJump) jumpPressed = false;
-  if (gameObject == joystick) {
-    gameObject.x = joystickX;
-    gameObject.y = joystickY;
-    moveRight = false;
-    moveLeft = false;
-  }
 });
+
 
 
 //********  Decrease Player & Exit Door Boundaries  *******/

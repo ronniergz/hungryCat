@@ -91,7 +91,7 @@ body {
 }
 
 #controls {
-  height: 25rem;
+  height: 35rem;
   color: var(--textDark);
   text-align: center;
 }
@@ -115,6 +115,10 @@ body {
   justify-content: space-evenly;
   flex-wrap: wrap;
   flex-grow: 1;
+}
+
+.ctrlType {
+  margin-bottom: 0;
 }
 
 .control {
@@ -142,6 +146,6 @@ body {
   }
 
   #controls {
-    height: 20rem;
+    height: 30rem;
   }
 }
