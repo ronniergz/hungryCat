@@ -3,6 +3,9 @@ var config = {
   parent: 'gameSection',
   width: 800,
   height: 1040,
+  input: {
+    activePointers: 4,
+  },
   physics: {
     default: 'arcade',
     arcade: {
@@ -90,6 +93,8 @@ this.input.keyboard.on('keyup', (event) => {
 joystick = this.add.image(joystickX, joystickY, 'joystick');
 joystick.setScrollFactor(0).setInteractive({ draggable: true });
 this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+  if (dragX > (joystickX + 50) || dragX < (joystickX - 50)) return;
+  if (dragY > (joystickY + 50) || dragY < (joystickY - 50)) return;
   gameObject.x = dragX;
   gameObject.y = dragY;
   if (dragX > joystickX) {
